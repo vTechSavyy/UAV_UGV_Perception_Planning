@@ -37,6 +37,11 @@ Y = None
 # Weighting factor for heurestic - epsilon
 epsilon = 0.0
 
+# d. RRT parameters:
+Window_size = 7.5 # The operating window for each D.O.F
+NUMNODES = 100 # Maximum number of nodes
+Epsilon = 0.7 # For the growth step
+
 
 ## Controller parameters:
 # Proportional gain for go-to-goal controller for orientation - kpTheta
@@ -51,16 +56,20 @@ epsilon = 0.0
 # Window for Integral control: integralWindow - Set to -1 if entire error history is to be used - Need to implement this feature:
 
 
-kpTheta = 0.2
-kpDist = 0.3
+kpTheta = 0.6
+kpDist = 0.35
 
 kdTheta = 0.02
 kdDist = 0.008
 
 kiTheta = 0.005
-kiDist = 0.01
+kiDist = 0.02
 
 angErrThresh = 0.04
 distErrThresh = 0.2
 
-integralWindow = 10
+integralWindow = 8
+
+
+distSlope = 5
+angSlope = 0.05

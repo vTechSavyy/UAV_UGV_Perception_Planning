@@ -40,6 +40,7 @@ import time
 import numpy as np
 import params
 from   utilities import *
+from RRT_utilities import *
 
 global angErrHist
 global distErrHist
@@ -145,6 +146,11 @@ def g2g_xy_errors(clientID, pioneerHandle, goal):
 
     errAng = targetOrientation - thetap
 
+
+    # Restrict to -pi and +pi:
+    errAng = np.mod((errAng+ np.pi), 2*np.pi) - np.pi
+
+
     if abs(errAng) < params.angErrThresh:
 
         reachedOrientation = True
@@ -220,7 +226,7 @@ def g2g_controller_PID(clientID, pioneerHandle, pioneerLeftMotorHandle, pioneerR
 
             elif len(angErrHist) > 2:
 
-                omega = params.kpTheta*errAng - params.kdTheta*(errAng - angErrHist[-2]) - params.kiTheta*sum(angErrHist)
+                omega = -params.kpTheta*errAng - params.kdTheta*(errAng - angErrHist[-2]) - params.kiTheta*sum(angErrHist)
 
             else:
 
@@ -313,81 +319,113 @@ if clientID!=-1:
 
 
     # 2.b Handle the Quadcopter:
-    res , quadCameraHandle = vrep.simxGetObjectHandle(clientID, 'Quadricopter_floorCamera', vrep.simx_opmode_oneshot_wait)
+    # res , quadCameraHandle = vrep.simxGetObjectHandle(clientID, 'Quadricopter_floorCamera', vrep.simx_opmode_blocking)
+    # print(res)
+    # time.sleep(5)
+    #res , quadHandle = vrep.simxGetObjectHandle(clientID, 'Quadricopter_target', vrep.simx_opmode_blocking)
 
-    if res == vrep.simx_return_ok:
-
-        print (" Got the handle")
+    # if res == vrep.simx_return_ok:
+    #
+    #     print (" Got the Quadcopter handle")
 
     ### Step 3: Start the Simulation: Keep printing out status messages!!!
     res = vrep.simxStartSimulation(clientID, vrep.simx_opmode_oneshot_wait)
 
-    if res:
+    if res == vrep.simx_return_ok:
 
-        print (" Started Simulation!!!")
+        print ("---!!! Started Simulation !!! ---")
+
+
+    # # Test out Qudcopter PID control: Move 4 meters ahead!
+    # for i in range(1,15):
+    #
+    #     res = vrep.simxSetObjectPosition(clientID, quadHandle, -1, (i*0.5,0,3), vrep.simx_opmode_oneshot_wait)
+    #
+    #     time.sleep(1)
 
 
     ### Step 3: Perception:  TO BE DONE:
 
-    # First call:
-    res,resolution,image=vrep.simxGetVisionSensorImage(clientID, quadCameraHandle,0,vrep.simx_opmode_oneshot_wait)
-
-    if res == vrep.simx_return_ok:
-
-        print (" successful first image!")
-
-    time.sleep(5)
-
-    while (vrep.simxGetConnectionId(clientID) != -1):
-
-         res, resolution, image = vrep.simxGetVisionSensorImage(clientID, quadCameraHandle, 0, vrep.simx_opmode_buffer)
-
-         if res == vrep.simx_return_ok:
-             print (len(image))
-
-
-
-
+    # # First call:
+    # res,resolution,image=vrep.simxGetVisionSensorImage(clientID, quadCameraHandle,0,vrep.simx_opmode_streaming)
+    # print ('firts call',res)
+    # time.sleep(5)
+    # res,resolution,image=vrep.simxGetVisionSensorImage(clientID, quadCameraHandle,0,vrep.simx_opmode_buffer)
+    # print ('second call',res)
+    #
+    # if res == vrep.simx_return_ok:
+    #
+    #     print (" successful first image!")
+    #
+    # time.sleep(5)
+    #
+    # while (vrep.simxGetConnectionId(clientID) != -1):
+    #
+    #      res, resolution, image = vrep.simxGetVisionSensorImage(clientID, quadCameraHandle, 0, vrep.simx_opmode_buffer)
+    #
+    #      print (res)
+    #
+    #      if res == vrep.simx_return_ok:
+    #          print (len(image))
 
     ### Step 4: Planning: Find the shortest path from current location to Goal:
 
     # Generate grid and return X and Y co-ordinates of all the nodes:
     [params.X,params.Y] = generate_grid()
 
-    ##  A* with out graph for the planning:
+    # ##  A* with out graph for the planning:
+    #
+    # start = time.time()
+    # numNodes = len(params.X)
+    # startIdx = get_node_idx(0,0)
+    # goalIdx =  get_node_idx(7.0,7.0)
+    #
+    # pathPointIndices= astar_no_graph(startIdx,goalIdx, numNodes, params.epsilon)
+    #
+    #
+    # end = time.time()
+    #
+    # timeNoGraph = end - start
+    #
+    # print (" Time taken for A* without the Graph is : " , timeNoGraph ,  "secs")
+    #
+    # print (" The generate path is: ")
+    # for idx in pathPointIndices:
+    #
+    #     print( idx , end = "-->")
+    #
+    # print (" ")
 
-    start = time.time()
-    numNodes = len(params.X)
-    startIdx = get_node_idx(0,0)
-    goalIdx =  get_node_idx(7.0,7.0)
-
-    pathPointIndices= astar_no_graph(startIdx,goalIdx, numNodes, params.epsilon)
 
 
-    end = time.time()
+    ## RRT for the planning: Gracias Senore Bijo!
 
-    timeNoGraph = end - start
 
-    print (" Time taken for A* without the Graph is : " , timeNoGraph ,  "secs")
+    # 1. Setup RRT:
+    start = Node(0.0, 0.0) # Start
+    goal = Node(7.0, 7.0) # Goal
 
-    print (" The generate path is: ")
-    for idx in pathPointIndices:
+    # 2. Run the RRT algorithm and directly plot the path:
+    startTime = time.time()
+    rrtPath = RRT(start, goal)
+    endTime = time.time()
 
-        print( idx , end = "-->")
+    timeRRT= endTime - startTime
 
-    print (" ")
+    print (" Time taken for RRT planning is : " , timeRRT ,  "secs")
 
 
     ### Step 6 : Simple go-to-goal controller for the entire planned path:
+
+    sTime = time.time()
+
     pathPointCount = 0
 
-    # The loop to traverse the planned path:
-    while pathPointCount < len(pathPointIndices)-1 :
-
-        immGoalIdx = pathPointIndices[pathPointCount]
-
-        # Get the x-y co-ordinates of the immediate goal:
-        immGoal = (params.X[immGoalIdx] , params.Y[immGoalIdx])
+    # Reverse the RRT path list:
+    rrtPath[::-1]
+    
+    # Loop to traverse RRT Path:
+    for immGoal in rrtPath:
 
         # Run the Go-to-goal control function:
         reached = g2g_controller_PID(clientID, pioneerHandle, pioneerLeftMotorHandle, pioneerRightMotorHandle, immGoal)
@@ -406,38 +444,61 @@ if clientID!=-1:
 
 
 
+    # # The loop to traverse the planned path by A*:
+    # while pathPointCount < len(pathPointIndices)-1 :
+    #
+    #     immGoalIdx = pathPointIndices[pathPointCount]
+    #
+    #     # Get the x-y co-ordinates of the immediate goal:
+    #     immGoal = (params.X[immGoalIdx] , params.Y[immGoalIdx])
+    #
+    #     # Run the Go-to-goal control function:
+    #     reached = g2g_controller_PID(clientID, pioneerHandle, pioneerLeftMotorHandle, pioneerRightMotorHandle, immGoal)
+    #
+    #     if reached:
+    #
+    #         # Increment the path point count:
+    #         pathPointCount +=1
+    #
+    #         print (" Reached node # " , pathPointCount )
+    #         print (" ---------------------------------")
+    #
+    #     else:
+    #
+    #         print(" There was an ERROR! Please investigate!!!")
 
 
+    eTime = time.time()
 
-    # # Now try to retrieve data in a blocking fashion (i.e. a service call):
-    # res,objs=vrep.simxGetObjects(clientID,vrep.sim_handle_all,vrep.simx_opmode_blocking)
-    # if res==vrep.simx_return_ok:
-    #     print ('Number of objects in the scene: ',len(objs))
-    # else:
-    #     print ('Remote API function call returned with error code: ',res)
-    #
-    # time.sleep(2)
-    #
-    # # Now retrieve streaming data (i.e. in a non-blocking fashion):
-    # startTime=time.time()
-    # vrep.simxGetIntegerParameter(clientID,vrep.sim_intparam_mouse_x,vrep.simx_opmode_streaming) # Initialize streaming
-    # while time.time()-startTime < 5:
-    #     returnCode,data=vrep.simxGetIntegerParameter(clientID,vrep.sim_intparam_mouse_x,vrep.simx_opmode_buffer) # Try to retrieve the streamed data
-    #     if returnCode==vrep.simx_return_ok: # After initialization of streaming, it will take a few ms before the first value arrives, so check the return code
-    #         print ('Mouse position x: ',data) # Mouse position x is actualized when the cursor is over V-REP's window
-    #     time.sleep(0.005)
-    #
-    # # Now send some data to V-REP in a non-blocking fashion:
-    # vrep.simxAddStatusbarMessage(clientID,'Hello V-REP!',vrep.simx_opmode_oneshot)
-    #
-    # # Before closing the connection to V-REP, make sure that the last command sent out had time to arrive. You can guarantee this with (for example):
-    # vrep.simxGetPingTime(clientID)
+    travelTime = eTime - sTime
+
+    # Display successful path planning message!:
+    print ("--- Robot has Successfully reached its final Goal --- ")
+    print (" The toal time taken is : " , travelTime , " secs")
+
+    # Set the joint velocities back to zero:
+    res = vrep.simxSetJointTargetVelocity(clientID, pioneerLeftMotorHandle, 0, vrep.simx_opmode_streaming)
+    res = vrep.simxSetJointTargetVelocity(clientID, pioneerRightMotorHandle, 0, vrep.simx_opmode_streaming)
+
+
+    # Stop the simulation:
+    res = vrep.simxStopSimulation(clientID, vrep.simx_opmode_oneshot_wait)
+
+    if res == vrep.simx_return_ok:
+
+        print (" --- !!!Stopped Simulation!!! ---")
+
 
     # Now close the connection to V-REP:
     vrep.simxFinish(clientID)
+
 else:
+
     print ('Failed connecting to remote API server')
-print ('Program ended')
+
+
+
+print (' --- Python Remote API Program ended ---')
 
 
 

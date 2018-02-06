@@ -14,6 +14,8 @@
 import random
 import math
 import matplotlib.pyplot as mp
+import numpy as np
+import time
 
 #parameters
 Window_size = 100.0 # The operating window for each D.O.F
@@ -45,11 +47,40 @@ class Obes:
         self.ys = yscoord
         self.xe = xecoord
         self.ye = yecoord
-obes = []
-obes.append(Obes(20,0,20,70))
-obes.append(Obes(40,60,40,100))
-obes.append(Obes(60,0,60,70))
-obes.append(Obes(60,20,90,20))
+
+
+obs = []#Actual obstacles
+obs.append(Obes(20,60,60,20))
+obs.append(Obes(60,60,80,20))
+obs.append(Obes(20,0,80,30))
+obs.append(Obes(60,40,60,85))
+
+obes = []#Fattened obstacles
+
+def fat_obstacles():
+    #To pad the obstcles
+
+    for i in range(len(obs)):
+        orient = -np.arctan2((obs[i].ye - obs[i].ys), (obs[i].xe - obs[i].xs))
+        R = np.matrix([[np.cos(orient), -np.sin(orient)], [np.sin(orient), np.cos(orient)]])
+        temp = np.matrix([[obs[i].xs, obs[i].xe], [obs[i].ys, obs[i].ye]]) - np.matrix([[obs[i].xs], [obs[i].ys]])
+
+        temp = R*temp
+        up = temp + np.matrix([[-Epsilon, Epsilon], [Epsilon, Epsilon]])
+        down = temp + np.matrix([[-Epsilon, Epsilon], [-Epsilon, -Epsilon]])
+        up = R.transpose()*up
+        down = R.transpose()*down
+        up += np.matrix([[obs[i].xs], [obs[i].ys]])
+        down += np.matrix([[obs[i].xs], [obs[i].ys]])
+        s1 = np.matrix([[up[0,0], down[0,0]],[up[1,0], down[1,0]]])
+        s2 = np.matrix([[up[0,1], down[0,1]],[up[1,1], down[1,1]]])
+
+        obes.append(Obes(up[0,0], up[1,0], up[0,1], up[1,1]))
+        obes.append(Obes(down[0,0], down[1,0], down[0,1], down[1,1]))
+        obes.append(Obes(s1[0,0], s1[1,0], s1[0,1], s1[1,1]))
+        obes.append(Obes(s2[0,0], s2[1,0], s2[0,1], s2[1,1]))
+
+    return
 
 def get_orientation(pa,pb,pc):
     #All creidts to Savio
@@ -124,7 +155,7 @@ def drawSolutionPath(sol, nodes):
     #Plot sol
     goal.parent = sol
     nn = goal
-    
+
     while nn!=start:
         print (nn.x, nn.y)
         mp.plot(nn.x, nn.y, 'ro')
@@ -133,13 +164,17 @@ def drawSolutionPath(sol, nodes):
         nn = nn.parent
 
     print (nn.x, nn.y)
-    mp.show()
+    #mp.show()
 
 def main():
+
+
+
     # The main function
     nodes = []# The tree of nodes
 
     nodes.append(start) # Start
+    fat_obstacles()
 
     #Setup plot
     mp.close('all')
@@ -150,10 +185,14 @@ def main():
         mp.plot([obes[i].xs, obes[i].xe], [obes[i].ys, obes[i].ye], '-k')
 
     flag_found  = False
+    avg_time = []
+    iter_num = 0
     while not flag_found and len(nodes) <= NUMNODES:
+        iter_num += 1
         print ('iter', len(nodes))
         rand = Node(random.random()*Window_size, random.random()*Window_size) #rand is randomly sampled node
         print(rand.x, rand.y)
+        Stime = time.time()
 
         flagc = 0
         nn = nodes[0] #nn is nearest node to rand
@@ -176,6 +215,8 @@ def main():
         if rand.x == nn.x and rand.y == nn.y:
             print('no motion')
             continue
+
+        avg_time.append(time.time() - Stime)
         #Take the random node into the tree
         rand.parent = nn
         print('parent')
@@ -190,6 +231,8 @@ def main():
                     nn = p
                     drawSolutionPath(nn, nodes)
                     flag_found  = True
+                    print('Time it takes: ',sum(avg_time)/len(avg_time))
+                    print('node num', iter_num)
                     return
 
     print('failed')
@@ -197,4 +240,10 @@ def main():
 
 # Finally we should run
 if __name__ == '__main__':
+
+    sTime = time.time()
     main()
+
+    eTime = time.time()
+
+    print (" Regular RRT took ", eTime -sTime , "secs")

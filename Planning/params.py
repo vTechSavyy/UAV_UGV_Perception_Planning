@@ -28,8 +28,25 @@ seg1 = [(2,0) ,(2,7)]
 seg2 = [(4,6) ,(4,10)]
 seg3 = [(6,2), (9,2)]
 seg4 = [(6,0), (6,7)]
+# seg5 = [(4,0),(4,4)]
+# seg6 = [(4,0),(4,4)]
+# seg7 = [(11,20),(11,11)]
+# seg8 = [(12,20),(12,11)]
+# seg9 = [(13,20),(13,11)]
+# seg10 = [(14,20),(14,11)]
+# seg11 = [(15,20),(15,11)]
+# seg12 = [(16,20),(16,11)]
+# seg13 = [(17,20),(17,11)]
 
-mazeSegments = [seg1, seg2, seg3, seg4]
+
+
+mazeSegments = [seg1, seg2, seg3, seg4 , seg5 , seg6, seg7, seg8, seg9, seg10,seg11,seg12,seg13]
+
+Sx =[]
+Ex =[]
+Sy =[]
+Ey =[]
+
 
 # b. Dijkstra parameters:
 
@@ -40,7 +57,7 @@ epsilon = 2
 
 
 # d. RRT parameters: 
-Window_size = 10.0 # The operating window for each D.O.F
+Window_size = 20.0 # The operating window for each D.O.F
 NUMNODES = 100 # Maximum number of nodes
 Epsilon = 1 # For the groeth step
 
