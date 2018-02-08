@@ -16,7 +16,7 @@
 widthX = 10
 widthY = 10
 gridRes = 0.5
-robotWidth = 0.75
+robotWidth = 0.5
 
 
 # Grid co-ordinates: Initialized later
@@ -24,7 +24,7 @@ X = None
 Y = None
 
 # Initialized here only during testing phase, else commeneted out: Obtain from VREP or real world: Buck up!
-seg1 = [(2,0) ,(2,7)]
+seg1 = [(2,0) ,(4,4)]
 seg2 = [(4,6) ,(4,10)]
 seg3 = [(6,2), (9,2)]
 seg4 = [(6,0), (6,7)]
@@ -40,12 +40,9 @@ seg4 = [(6,0), (6,7)]
 
 
 
-mazeSegments = [seg1, seg2, seg3, seg4 , seg5 , seg6, seg7, seg8, seg9, seg10,seg11,seg12,seg13]
+mazeSegments = [seg1, seg2, seg3, seg4]
+nSeg = 4
 
-Sx =[]
-Ex =[]
-Sy =[]
-Ey =[]
 
 
 # b. Dijkstra parameters:
@@ -57,9 +54,30 @@ epsilon = 2
 
 
 # d. RRT parameters: 
-Window_size = 20.0 # The operating window for each D.O.F
-NUMNODES = 100 # Maximum number of nodes
-Epsilon = 1 # For the groeth step
+windowSize = 10.0 # The operating window for each D.O.F
+numNodes = 100 # Maximum number of nodes
+stepSize= 0.5 # For the tree growth step
+GG = 10
+
+# inflated maze segments:
+infMazeSegments = []
+
+# Storage of co-ods of maze segments:
+mxVec , myVec , nxVec , nyVec = None , None , None, None
+
+# Storage for x and y co-od sof nodes in the tree: 
+pxVec = None
+pyVec = None
+
+# Nodes on the Random Tree: 
+nodes = []
+
+# e. RRT* parameters: 
+
+radius = 2  # Search radius for the chooseParent function: 
+
+pCost = None  # List which is used to keep track of the cost from the start to each of the nodes
+
 
 
 ## Controller parameters:

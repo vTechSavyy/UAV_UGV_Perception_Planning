@@ -13,10 +13,10 @@
 # Width of Grid in Y-direction : widthY
 # Resolution of the grid: gridRes
 # Width of the robot (A square for now) - robotWidth
-widthX = 7.5
-widthY = 7.5
+widthX = 7.0
+widthY = 7.0
 gridRes = 0.5
-robotWidth = 0.75
+robotWidth = 0.45
 
 
 # Grid co-ordinates: Initialized later
@@ -30,6 +30,8 @@ Y = None
 #
 # mazeSegments = [seg1, seg2, seg3]
 
+mazeSegments = None
+
 # b. Dijkstra parameters:
 
 
@@ -38,9 +40,23 @@ Y = None
 epsilon = 0.0
 
 # d. RRT parameters:
-Window_size = 7.5 # The operating window for each D.O.F
-NUMNODES = 100 # Maximum number of nodes
-Epsilon = 0.7 # For the growth step
+windowSize = 7.0 # The operating window for each D.O.F
+numNodes = 500 # Maximum number of nodes
+stepSize= 0.5 # For the tree growth step
+GG = 50
+
+# Inflated maze segments:
+infMazeSegments = []
+
+# Storage of co-ods of maze segments:
+mxVec , myVec , nxVec , nyVec = None , None , None, None
+
+# Storage for x and y co-od sof nodes in the tree:
+pxVec = []
+pyVec = []
+
+# Nodes on the Random Tree:
+nodes = []
 
 
 ## Controller parameters:
@@ -56,8 +72,8 @@ Epsilon = 0.7 # For the growth step
 # Window for Integral control: integralWindow - Set to -1 if entire error history is to be used - Need to implement this feature:
 
 
-kpTheta = 0.6
-kpDist = 0.35
+kpTheta = 0.3
+kpDist = 0.08
 
 kdTheta = 0.02
 kdDist = 0.008
@@ -65,11 +81,10 @@ kdDist = 0.008
 kiTheta = 0.005
 kiDist = 0.02
 
-angErrThresh = 0.04
+angErrThresh = 0.03
 distErrThresh = 0.2
 
 integralWindow = 8
-
 
 distSlope = 5
 angSlope = 0.05

@@ -8,9 +8,9 @@ import params
 import matplotlib.pyplot as plt
 
 #parameters
-Window_size = params.Window_size # The operating window for each D.O.F
-NUMNODES = params.NUMNODES # Maximum number of nodes
-Epsilon = params.Epsilon # For the groeth step
+Window_size = params.windowSize # The operating window for each D.O.F
+NUMNODES = params.numNodes # Maximum number of nodes
+Epsilon = params.stepSize # For the groeth step
 
 #Define nodes
 class Node:
@@ -185,9 +185,15 @@ def RRT(start, goal):
 
         if len(nodes)%5 == 0:
             nn = nodes[0]
+            
+            
             for p in nodes:
+                
                 if not checkIntersect_rrt(p, goal):
+                    
                     nn = p
+                    goal.parent = nn
+                    
                     path = drawSolutionPath(nn, nodes, start, goal)
                     flag_found  = True
                     return path

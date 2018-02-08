@@ -40,6 +40,7 @@ import time
 import numpy as np
 import params
 from   utilities import *
+from RRT_vect_utilities import *
 
 global angErrHist
 global distErrHist
@@ -292,8 +293,6 @@ if clientID!=-1:
 
     # 2.b Handle the Quadcopter:
     # res , quadCameraHandle = vrep.simxGetObjectHandle(clientID, 'Quadricopter_floorCamera', vrep.simx_opmode_blocking)
-    # print(res)
-    # time.sleep(5)
     #res , quadHandle = vrep.simxGetObjectHandle(clientID, 'Quadricopter_target', vrep.simx_opmode_blocking)
 
     # if res == vrep.simx_return_ok:
@@ -306,14 +305,6 @@ if clientID!=-1:
     if res == vrep.simx_return_ok:
 
         print ("---!!! Started Simulation !!! ---")
-
-
-    # # Test out Qudcopter PID control: Move 4 meters ahead!
-    # for i in range(1,15):
-    #
-    #     res = vrep.simxSetObjectPosition(clientID, quadHandle, -1, (i*0.5,0,3), vrep.simx_opmode_oneshot_wait)
-    #
-    #     time.sleep(1)
 
 
     ### Step 3: Perception:  TO BE DONE:
@@ -340,12 +331,13 @@ if clientID!=-1:
     #      if res == vrep.simx_return_ok:
     #          print (len(image))
 
+
     ### Step 4: Planning: Find the shortest path from current location to Goal:
 
     # Generate grid and return X and Y co-ordinates of all the nodes:
     [params.X,params.Y] = generate_grid()
 
-    ##  A* with out graph for the planning:
+    ## 1.  A* with out graph for the planning:
 
     start = time.time()
     numNodes = len(params.X)
@@ -368,20 +360,50 @@ if clientID!=-1:
 
     print (" ")
 
+    ## 2. RRT planning: Vectorized version:
+    # ----------------------------------------------------- #
+    # 1. Give the inputs to the RRT algorithm:
+    start = Node(0.0, 0.0) # Start
+    goal = Node(8.0, 0.5) # Goal
+
+    # 2. Inflate the maze segments:
+    inflate_segments()
+
+    # 3. Setup for vectorization:
+    setup_vec()
+
+    # 4. Run the RRT algorithm and directly plot the path:
+    startTime = time.time()
+    RRT_path = RRT(start, goal)
+    endTime = time.time()
+
+
+    # 5. Get the true path from start to goal:
+    revPath = reverse_path(RRT_path)
+
+    timeRRT= endTime - startTime
+
+    print (" Time taken for RRT Planner is : " , timeRRT ,  "secs")
+    print (" The RRT path is : ")
+    print (revPath)
+    # ----------------------------------------------------- #
+
+
 
     ### Step 6 : Simple go-to-goal controller for the entire planned path:
 
     sTime = time.time()
 
-    pathPointCount = 0
+    #pathPointCount = 0
 
     # The loop to traverse the planned path:
-    while pathPointCount < len(pathPointIndices)-1 :
+    #while pathPointCount < len(pathPointIndices)-1 :
+    for immGoal in revPath:
 
-        immGoalIdx = pathPointIndices[pathPointCount]
+        #immGoalIdx = pathPointIndices[pathPointCount]
 
         # Get the x-y co-ordinates of the immediate goal:
-        immGoal = (params.X[immGoalIdx] , params.Y[immGoalIdx])
+        #immGoal = (params.X[immGoalIdx] , params.Y[immGoalIdx])
 
         # Run the Go-to-goal control function:
         reached = g2g_controller_PID(clientID, pioneerHandle, pioneerLeftMotorHandle, pioneerRightMotorHandle, immGoal)
