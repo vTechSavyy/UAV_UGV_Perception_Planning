@@ -256,7 +256,7 @@ def inflate_segments():
         
         # Determine the increments in x and y co-ods that need to be added to the segment end points: 
         deltaX = np.sin(orientSeg)*segWidth
-        deltaY = np.cos(orientSeg)*segWidth
+        deltaY = np.cos(orientSeg)*segWidth 
         
         
         # Determine the 4 new points of the inflated obstacle: 

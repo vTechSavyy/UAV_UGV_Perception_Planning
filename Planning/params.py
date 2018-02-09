@@ -13,10 +13,10 @@
 # Width of Grid in Y-direction : widthY
 # Resolution of the grid: gridRes
 # Width of the robot (A square for now) - robotWidth
-widthX = 10
-widthY = 10
-gridRes = 0.5
-robotWidth = 0.5
+widthX = 50
+widthY = 50
+gridRes = 1
+robotWidth = 1.5
 
 
 # Grid co-ordinates: Initialized later
@@ -24,14 +24,14 @@ X = None
 Y = None
 
 # Initialized here only during testing phase, else commeneted out: Obtain from VREP or real world: Buck up!
-seg1 = [(2,0) ,(4,4)]
-seg2 = [(4,6) ,(4,10)]
-seg3 = [(6,2), (9,2)]
-seg4 = [(6,0), (6,7)]
-# seg5 = [(4,0),(4,4)]
-# seg6 = [(4,0),(4,4)]
-# seg7 = [(11,20),(11,11)]
-# seg8 = [(12,20),(12,11)]
+seg1 = [(20,0) ,(45,10)]
+seg2 = [(45,68) ,(48,40)]
+seg3 = [(46,25), (9,2)]
+seg4 = [(26,30), (16,27)]
+seg5 = [(14,10),(24,44)]
+seg6 = [(40,8),(14,45)]
+seg7 = [(10,10),(10,40)]
+seg8 = [(32,30),(50,30)]
 # seg9 = [(13,20),(13,11)]
 # seg10 = [(14,20),(14,11)]
 # seg11 = [(15,20),(15,11)]
@@ -40,8 +40,8 @@ seg4 = [(6,0), (6,7)]
 
 
 
-mazeSegments = [seg1, seg2, seg3, seg4]
-nSeg = 4
+mazeSegments = [seg1, seg2, seg3, seg4 , seg5 , seg6, seg7, seg8]
+nSeg = 8
 
 
 
@@ -54,10 +54,10 @@ epsilon = 2
 
 
 # d. RRT parameters: 
-windowSize = 10.0 # The operating window for each D.O.F
+windowSize = 50.0 # The operating window for each D.O.F
 numNodes = 500 #Maximum number of nodes
 stepSize= 0.5 # For the tree growth step
-GG = 100
+GG = 200
 
 # inflated maze segments:
 infMazeSegments = []
