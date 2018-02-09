@@ -55,7 +55,7 @@ epsilon = 2
 
 # d. RRT parameters: 
 windowSize = 10.0 # The operating window for each D.O.F
-numNodes = 100 # Maximum number of nodes
+numNodes = 200 #Maximum number of nodes
 stepSize= 0.5 # For the tree growth step
 GG = 10
 
@@ -66,8 +66,8 @@ infMazeSegments = []
 mxVec , myVec , nxVec , nyVec = None , None , None, None
 
 # Storage for x and y co-od sof nodes in the tree: 
-pxVec = None
-pyVec = None
+pxVec = []
+pyVec = []
 
 # Nodes on the Random Tree: 
 nodes = []
@@ -76,7 +76,7 @@ nodes = []
 
 radius = 2  # Search radius for the chooseParent function: 
 
-pCost = None  # List which is used to keep track of the cost from the start to each of the nodes
+pCost = []  # List which is used to keep track of the cost from the start to each of the nodes
 
 
 

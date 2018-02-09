@@ -38,7 +38,7 @@ except:
 
 import time
 import numpy as np
-from matplotlib import pyplot as plt
+#from matplotlib import pyplot as plt
 
 # Setup parameters:
 sampleRate = 0.5
@@ -132,8 +132,8 @@ if res == vrep.simx_return_ok:
 
 
 
-fig , axes = plt.subplots(3,1, sharex = True)
-plt.ion()
+# fig , axes = plt.subplots(3,1, sharex = True)
+# plt.ion()
 
 ### Step 4: Acquire and plot the data from the handles:
 sampleCount = 1
@@ -167,10 +167,14 @@ while sampleCount < sampleLimit:
     # -- TO DO : Have to understand how communication tubes work! --#
 
 
-    axes[0].plot(sampleCount , gyroX, 'g*')
-    axes[1].plot(sampleCount , gyroY, 'm*')
-    axes[2].plot(sampleCount , gyroZ, 'b*')
-    plt.pause(0.1)
+    # axes[0].plot(sampleCount , gyroX, 'g*')
+    # axes[1].plot(sampleCount , gyroY, 'm*')
+    # axes[2].plot(sampleCount , gyroZ, 'b*')
+    # plt.pause(0.1)
+
+
+    # d. Get the velodyne data:
+    velodyne_points= vrep.simxCallScriptFunction(clientID, 'velodyneHDL_64E_S2', 1, 'VF',[],[],[],[],vrep.simx_opmode_blocking)
 
 
 

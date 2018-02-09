@@ -1,11 +1,10 @@
-### Description: RRT planner : Many thanks to Bijo Sebastian for providing this algorithm: 
-
-# Last updated: 7th Feb 2018: 
+# Last updated: 8th Feb 2018: 
 
 import numpy as np
 import math
 import params
 import random
+
 
 ### The different classes used in the implementation: 
 
@@ -96,6 +95,8 @@ def step_from_to(n1,n2):
     
     temp = Node(n1.x + params.stepSize*cSlope, n1.y + params.stepSize*sSlope)
     
+    # Keep track of the distance stepped: 
+    distance = 0
     
     # Keep stepping until a collision occurs:
     while not checkIntersect_rrt(n1, temp):
@@ -107,8 +108,10 @@ def step_from_to(n1,n2):
         # Step forward:
         temp.x += params.stepSize*cSlope
         temp.y += params.stepSize*sSlope
+        
+        distance += params.stepSize
 
-    return res
+    return res, distance
 
 
 
@@ -124,15 +127,18 @@ def getShortestPath(start , goal):
     if goal.parent == start: 
         print (" We have the problem right here")
     
+    count =0
     # Until we reach the start node:
-    while currNode != start: 
-        
+    #while count <20:
+    while currNode.x != start.x and currNode.y != start.y        
         
         # Append the current node to the path: 
         path.append(currNode)
         
         # Move on to the next node which will be the parent of the current node: 
         currNode = currNode.parent
+        
+        count +=1
         
     # Append the start node as well:
     path.append(currNode)
@@ -319,13 +325,139 @@ def setup_vec():
     
     return
 
+         
 
-### 8. Function to implement the RRT algorithm: The main function: 
 
-# The functions returns a list with the path of nodes to be followed from Goal to Start: 
+# 9. Function to choose parent:
 
-# TO DO: Write a utility function that extracts the indices of the path to be followed from Start to Goal:
-def RRT(start, goal):     
+def choose_parent(rand, distArr,nNodes): 
+    
+    """
+    
+    Description: This function takes in the randomly sampled node and chooses the right parent for it
+    
+    Inputs: 
+    1. rand  -  The randomly sampled node  
+    2. distArr - Pre-compute distances from all nodes in the tree to the random node
+    3. nNodes - The number of nodes currently in the Tree
+    
+    
+    #Special Case: The new random node collides with all the nodes on the tree. In this case grow the tree from the nearest neighbor 
+    towards the random node. Set the collision node as the random node 
+    
+    Add the random node to the tree by choosing the right parent. The right parent is the one which minimizes the
+    total cost-to-come
+    
+    
+    """
+   
+    
+    # 1. Obtain the Collision matrix for the random node w.r.t all nodes and all segments 
+    collisionMat = checkCollisionVect(nNodes, rand)
+    
+    
+    # 2. Find the nodes which don't cause collision with any of the segments: 
+    collisionArr = np.any(collisionMat , axis =1)
+    
+    # Initialize an empty list:
+    idxNoCollision = []
+    
+    # Flag to check for no motion: 
+    noMotion = False
+    
+    # Flag to indicate if we went through all collision case: 
+    allCollisions = False
+    
+    # 3. Address the special case: If all the nodes cause collision :-(
+    if np.all(collisionArr):
+        
+        # Toggle the flag: 
+        allCollisions = True
+        
+        # Then step from nearest neighbor towards rand until collision:
+        
+        # Find the nearest neighbor of the random node in the tree:
+        idxParent = np.argmin(distArr)
+        nn = params.nodes[idxParent]   
+            
+        # Step from the nearest neighbor to the random node: a.k.a Growing the tree: 
+        rand, dist = step_from_to(nn, rand)
+        
+        # Update the parent and cost of rand: 
+        rand.parent = nn
+        rand.cost = nn.cost + dist
+        
+        # The no motion case: 
+        if rand.x == nn.x and rand.y == nn.y:            
+            noMotion = True           
+        
+        
+        
+    # 4. Now find the right parent for the random node: 
+    # Among the non-colliding nodes find the one with minimum: cost-to-come + distance to rand: 
+    else: 
+        # Find the indices of the nodes on the tree which don't have collisions:
+        idxNoCollision = np.where(~collisionArr)[0]
+
+        # Compute the total cost-to-come for all non-colliding nodes:
+        totalCostToCome = params.pCost[idxNoCollision] +  distArr[idxNoCollision]
+
+        # Find the one that minimzes the total cost-to-come and select it as the parent: 
+        idxMin = np.argmin(totalCostToCome)
+        idxParent = idxNoCollision[idxMin]   # This will be used in re-wiring step
+        rand.parent = params.nodes[idxParent]
+
+        # Add the total cost-to-come for the random node:
+        rand.cost = totalCostToCome[idxMin]
+    
+   
+    
+    # Return out the new random node
+    # Return out the indices where collision does not occur (idxNoCollision). We will use them in the re-wire function
+    # Return out the index of the parent of rand
+    return rand, idxNoCollision , idxParent, nNodes, noMotion , allCollisions
+
+
+# 10. Function to rewire the Tree: 
+
+def rewire(rand, idxNoCollision , idxParent, distArr):     
+    """
+    
+    Logic: For each node in the Tree (except for the parent of rand node) , check whether it is shorter to reach 
+    given node through rand node rather than through its original parent. 
+    
+    Inputs: 
+    1. rand - Randomly sampled node which has been added to the tree
+    2. idxNoCollision - Indices of nodes in the Tree which do NOT cause collision with rand
+    3. idxParent - Index of the parent node of rand in the Tree
+    4. distArr - Pre-compute distances from all nodes in the tree to the random node
+    5. flagReCheck - Flag to indicate whether we need to recompute distances and the collision checks: 
+    
+    """
+    
+    # Need to do collision check again if we did the stepping from nearest neighbor: 
+    
+    # Loop through the nodes in the Tree which don't cause collision with the rand node: 
+    for idx in idxNoCollision:        
+        
+        # Compute the new cost: 
+        newCost = rand.cost + distArr[idx] 
+        
+        # Check whether it is shorter to reach there through the rand node: Except for rand parent node 
+        if newCost < params.nodes[idx].cost and params.nodes[idx] != rand.parent: 
+            
+            # Change the parent of the current node to rand: 
+            params.nodes[idx].parent = rand
+        
+            # Update the cost of the current node: 
+            params.nodes[idx].cost = newCost
+            
+            
+    return  
+
+### 11. RRT* Main routine: 
+
+def RRT_star(start, goal):     
     
     # Append the start node to the list of nodes: 
     params.nodes.append(start)
@@ -333,6 +465,7 @@ def RRT(start, goal):
     # Add the x and y co-ods of the start node to the co-od arrays: pxVec and pyVec: 
     params.pxVec = np.append(params.pxVec, start.x)
     params.pyVec = np.append(params.pyVec, start.y)
+    params.pCost = np.append(params.pyVec, start.cost)
     
     # Initialize a flag to check whether goal has been reached: 
     reachedGoal = False
@@ -346,60 +479,52 @@ def RRT(start, goal):
         # Randomly sample a node within the specified window: 
         rand = Node(random.random()*params.windowSize, random.random()*params.windowSize)
         
+        # 0. Compute the distance of all nodes in the Tree to the random node: 
+        distArr = np.sqrt((params.pyVec - rand.y)**2 + (params.pxVec - rand.x)**2) 
         
-        # Compute the distance of all nodes in the Tree to the random node: 
-        distArr = np.sqrt( (params.pyVec - rand.y)**2 + (params.pxVec - rand.x)**2 )   # Relying on NumPy's broadcasting operations here: 
+        # Choose the right parent: 
+        rand, idxNoCollision, idxParent , nNodes , noMotion , allCollisions = choose_parent(rand, distArr, nNodes)
         
-        
-        # Obtain the Collision matrix here: 
-        collisionMat = checkCollisionVect(nNodes, rand)
-        
-        # Extract the collision array : Which is collision status for each node in the tree: 
-        collisionArr = np.any(collisionMat , axis =1)
-        
-        # Check the two cases: 
-        
-        # Case A: The paths from random node to all nodes on the tree have collisions:
-        if np.all(collisionArr):
+        # Check for no motion: 
+        if noMotion:
             
-            # Find the nearest neighbor of the random node in the tree:
-            nn = params.nodes[np.argmin(distArr)]
-            
-            # Step from the nearest neighbor to the random node: a.k.a Growing the tree: 
-            rand = step_from_to(nn, rand)
-            
-        # Case B: At least one path from the random node to the nodes on the tree is collision free: 
-        else: 
-            
-            # Find the indices of the nodes on the tree which don't have collisions:
-            idxNoCollision = np.where(~collisionArr)[0]
-            
-            # Find the nearest neighbor among the collision free nodes: 
-            nn = params.nodes[ idxNoCollision[ np.argmin(distArr[idxNoCollision])] ]
-            
-        
-        # No motion case: Not really understood this: Ask Bijo about this one. He knows this algorithm much better. 
-        if rand.x == nn.x and rand.y == nn.y:            
             continue
-            
-            
-        # Set the nearest neighbor as the parent of the random node: 
-        rand.parent = nn
         
-        # Add the random node to the Tree: 
+        # Check for the all collisions case: 
+        if allCollisions: 
+            
+             # Compute the distance of all nodes in the Tree to the random node: 
+            distArr = np.sqrt((params.pyVec - rand.y)**2 + (params.pxVec - rand.x)**2)
+
+            # Obtain the Collision matrix for the random node w.r.t all nodes and all segments 
+            collisionMat = checkCollisionVect(nNodes, rand)
+
+
+            # Find the nodes which don't cause collision with any of the segments: 
+            collisionArr = np.any(collisionMat , axis =1)
+
+            # Find the indices of the nodes on the tree which don't have collisions:
+            idxNoCollision = np.where(~collisionArr)[0]         
+            
+            
+            
+        # Re-wire the Tree: 
+        rewire(rand, idxNoCollision, idxParent, distArr)
+        
+        # Append the random node to the Tree: 
         params.nodes.append(rand)
         params.pxVec = np.append(params.pxVec, rand.x)
         params.pyVec = np.append(params.pyVec, rand.y)
+        params.pCost = np.append(params.pCost, rand.cost)
         
         # Increment the number of nodes: 
         nNodes += 1
         
-            
         # The loop breaking condition: Checking if Goal can be reached: Done after every 'GG' nodes added to Tree: 
         
         if nNodes % params.GG == 0: 
             
-            # Obtain the Collision matrix here: 
+            # Obtain the Collision matrix here: Note: This is for each node with respect to the goal
             collisionMat = checkCollisionVect(nNodes, goal)
 
             # Extract the collision array : Which is collision status for each node in the tree: 
@@ -409,37 +534,27 @@ def RRT(start, goal):
             if not np.all(collisionArr):
                 
                 # Compute distance array to goal node:
-                distArrGoal = np.sqrt( (params.pyVec - goal.y)**2 + (params.pxVec - goal.x)**2 ) 
-                
-                #print (collisionArr)
+                distArrGoal = np.sqrt( (params.pyVec - goal.y)**2 + (params.pxVec - goal.x)**2 )
                 
                 # Find the indices of the nodes on the tree which don't have collisions:
                 idxNoCollision = np.where(~collisionArr)[0]
-                
-                #print (idxNoCollision)
 
                 # Find the nearest neighbor among the collision free nodes: 
-                nn = params.nodes[ idxNoCollision[np.argmin(distArrGoal[idxNoCollision])] ]
+                nn = params.nodes[idxNoCollision[np.argmin(distArrGoal[idxNoCollision])]]
                 
                 # Set the nearest neighbor as the parent of the goal node: 
                 goal.parent = nn
                 
                 # Extract the "shortest" path from the Tree: 
-                RRT_path = getShortestPath(start, goal)
-                
-#                 for node in RRT_path: 
-                    
-#                     print( (node.x , node.y) , end ="-->")
-                    
-#                 print(" ")
+                RRT_star_path = getShortestPath(start, goal)
                 
                 # Toggle the flag for indicating that we reached the goal: This is kind of redundant. But still ask
                 # Bijo before removing this...
                 reachedGoal = True
                 
-                return RRT_path             
+                return RRT_star_path             
                 
     
     # If the number of nodes is exceeded then return with failure: 
-    print (" RRT failed to find a path")
+    print (" RRT* failed to find a path")
     return []
