@@ -55,9 +55,9 @@ epsilon = 2
 
 # d. RRT parameters: 
 windowSize = 10.0 # The operating window for each D.O.F
-numNodes = 200 #Maximum number of nodes
+numNodes = 500 #Maximum number of nodes
 stepSize= 0.5 # For the tree growth step
-GG = 10
+GG = 100
 
 # inflated maze segments:
 infMazeSegments = []

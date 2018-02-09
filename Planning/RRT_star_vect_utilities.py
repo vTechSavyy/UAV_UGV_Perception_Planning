@@ -130,7 +130,7 @@ def getShortestPath(start , goal):
     count =0
     # Until we reach the start node:
     #while count <20:
-    while currNode.x != start.x and currNode.y != start.y        
+    while currNode.x != start.x and currNode.y != start.y:      
         
         # Append the current node to the path: 
         path.append(currNode)
@@ -374,8 +374,6 @@ def choose_parent(rand, distArr,nNodes):
         # Toggle the flag: 
         allCollisions = True
         
-        # Then step from nearest neighbor towards rand until collision:
-        
         # Find the nearest neighbor of the random node in the tree:
         idxParent = np.argmin(distArr)
         nn = params.nodes[idxParent]   
@@ -388,8 +386,8 @@ def choose_parent(rand, distArr,nNodes):
         rand.cost = nn.cost + dist
         
         # The no motion case: 
-        if rand.x == nn.x and rand.y == nn.y:            
-            noMotion = True           
+        if dist == 0:            
+            noMotion = True    
         
         
         
@@ -420,7 +418,7 @@ def choose_parent(rand, distArr,nNodes):
 
 # 10. Function to rewire the Tree: 
 
-def rewire(rand, idxNoCollision , idxParent, distArr):     
+def rewire(newNode, idxNoCollision , idxParent, distArr):     
     """
     
     Logic: For each node in the Tree (except for the parent of rand node) , check whether it is shorter to reach 
@@ -435,19 +433,18 @@ def rewire(rand, idxNoCollision , idxParent, distArr):
     
     """
     
-    # Need to do collision check again if we did the stepping from nearest neighbor: 
     
     # Loop through the nodes in the Tree which don't cause collision with the rand node: 
     for idx in idxNoCollision:        
         
         # Compute the new cost: 
-        newCost = rand.cost + distArr[idx] 
+        newCost = newNode.cost + distArr[idx] 
         
         # Check whether it is shorter to reach there through the rand node: Except for rand parent node 
-        if newCost < params.nodes[idx].cost and params.nodes[idx] != rand.parent: 
+        if newCost < params.nodes[idx].cost and params.nodes[idx] != newNode.parent:
             
             # Change the parent of the current node to rand: 
-            params.nodes[idx].parent = rand
+            params.nodes[idx].parent = newNode
         
             # Update the cost of the current node: 
             params.nodes[idx].cost = newCost
@@ -465,7 +462,7 @@ def RRT_star(start, goal):
     # Add the x and y co-ods of the start node to the co-od arrays: pxVec and pyVec: 
     params.pxVec = np.append(params.pxVec, start.x)
     params.pyVec = np.append(params.pyVec, start.y)
-    params.pCost = np.append(params.pyVec, start.cost)
+    params.pCost = np.append(params.pCost, start.cost)
     
     # Initialize a flag to check whether goal has been reached: 
     reachedGoal = False
@@ -483,7 +480,7 @@ def RRT_star(start, goal):
         distArr = np.sqrt((params.pyVec - rand.y)**2 + (params.pxVec - rand.x)**2) 
         
         # Choose the right parent: 
-        rand, idxNoCollision, idxParent , nNodes , noMotion , allCollisions = choose_parent(rand, distArr, nNodes)
+        newNode, idxNoCollision, idxParent , nNodes , noMotion , allCollisions = choose_parent(rand, distArr, nNodes)
         
         # Check for no motion: 
         if noMotion:
@@ -494,10 +491,10 @@ def RRT_star(start, goal):
         if allCollisions: 
             
              # Compute the distance of all nodes in the Tree to the random node: 
-            distArr = np.sqrt((params.pyVec - rand.y)**2 + (params.pxVec - rand.x)**2)
+            distArr = np.sqrt((params.pyVec - newNode.y)**2 + (params.pxVec - newNode.x)**2)
 
             # Obtain the Collision matrix for the random node w.r.t all nodes and all segments 
-            collisionMat = checkCollisionVect(nNodes, rand)
+            collisionMat = checkCollisionVect(nNodes, newNode)
 
 
             # Find the nodes which don't cause collision with any of the segments: 
@@ -509,13 +506,13 @@ def RRT_star(start, goal):
             
             
         # Re-wire the Tree: 
-        rewire(rand, idxNoCollision, idxParent, distArr)
+        rewire(newNode, idxNoCollision, idxParent, distArr)
         
         # Append the random node to the Tree: 
-        params.nodes.append(rand)
-        params.pxVec = np.append(params.pxVec, rand.x)
-        params.pyVec = np.append(params.pyVec, rand.y)
-        params.pCost = np.append(params.pCost, rand.cost)
+        params.nodes.append(newNode)
+        params.pxVec = np.append(params.pxVec, newNode.x)
+        params.pyVec = np.append(params.pyVec, newNode.y)
+        params.pCost = np.append(params.pCost, newNode.cost)
         
         # Increment the number of nodes: 
         nNodes += 1
