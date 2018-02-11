@@ -163,27 +163,3 @@ class dHeap(Heap):
         return minNode
     
             
-            
-    
-# ### Test this out: 
-
-
-# node1 = dHeapNode(5,88)
-# node2 = dHeapNode(6,28)
-# node3 = dHeapNode(7,45)
-# node4 = dHeapNode(8,34)
-# node5 = dHeapNode(5,12)
-
-# TDH = dHeap(10)
-
-
-# TDH.insert(node1)
-# TDH.insert(node2)
-# TDH.insert(node3)
-# TDH.insert(node4)
-# TDH.insert(node5)
-
-
-
-
-# TDH.print()

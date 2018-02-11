@@ -363,7 +363,9 @@ def RRT(start, goal):
         if np.all(collisionArr):
             
             # Find the nearest neighbor of the random node in the tree:
-            nn = params.nodes[np.argmin(distArr)]
+            #nn = params.nodes[np.argmin(distArr)]
+            idxParent = int(random.random()*nNodes)
+            nn = params.nodes[idxParent]
             
             # Step from the nearest neighbor to the random node: a.k.a Growing the tree: 
             rand = step_from_to(nn, rand)

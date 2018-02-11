@@ -375,8 +375,11 @@ def choose_parent(rand, distArr,nNodes):
         allCollisions = True
         
         # Find the nearest neighbor of the random node in the tree:
-        idxParent = np.argmin(distArr)
-        nn = params.nodes[idxParent]   
+        #idxParent = np.argmin(distArr)
+        #nn = params.nodes[idxParent] 
+        idxParent = int(random.random()*nNodes)
+        nn = params.nodes[idxParent]
+          
             
         # Step from the nearest neighbor to the random node: a.k.a Growing the tree: 
         rand, dist = step_from_to(nn, rand)
