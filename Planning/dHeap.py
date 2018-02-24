@@ -162,4 +162,10 @@ class dHeap(Heap):
         # Return the min element: 
         return minNode
     
+    
+    # 6. Get current length of heap: Function to return the current number of elements in the Heap: 
+    def get_length(self): 
+        
+        return len(self.heapList)
+    
             

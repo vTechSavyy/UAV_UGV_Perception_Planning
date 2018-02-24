@@ -28,7 +28,7 @@ Build and Run Commands:
 Uses GNU G++ compiler:
 
 # 1. Compilation command:
-g++ -Wall -std=c++11 -o testHeap TestAStarHeap.cpp
+g++ -Wall -std=c++11 -o testHeap Test_AStarHeap.cpp
 
 # 2. Run command:
 ./testHeap

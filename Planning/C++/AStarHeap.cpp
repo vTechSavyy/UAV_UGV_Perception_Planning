@@ -219,7 +219,7 @@
   template <class Elem>
   void AStarHeap<Elem>::print(){
 
-    cout<<" The elements in the Heap are:"<<endl;
+    cout<<" The elements in the Heap are: ' Node_Number [key] ' "<<endl;
 
     for (typename vector<Elem>::iterator heapIt = heapArray.begin(); heapIt != heapArray.end(); ++heapIt){
 

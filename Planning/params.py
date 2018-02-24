@@ -13,9 +13,9 @@
 # Width of Grid in Y-direction : widthY
 # Resolution of the grid: gridRes
 # Width of the robot (A square for now) - robotWidth
-widthX = 50
-widthY = 50
-gridRes = 1
+widthX = 60
+widthY = 60
+gridRes = 2.0
 robotWidth = 1.5
 
 
@@ -24,14 +24,14 @@ X = None
 Y = None
 
 # Initialized here only during testing phase, else commeneted out: Obtain from VREP or real world: Buck up!
-seg1 = [(20,0) ,(45,10)]
+seg1 = [(25,5) ,(45,10)]
 seg2 = [(45,68) ,(48,40)]
-seg3 = [(46,25), (9,2)]
+seg3 = [(46,25), (10,0)]
 seg4 = [(26,30), (16,27)]
 seg5 = [(14,10),(24,44)]
 seg6 = [(40,8),(14,45)]
 seg7 = [(10,10),(10,40)]
-seg8 = [(32,30),(50,30)]
+seg8 = [(32,30),(60,30)]
 # seg9 = [(13,20),(13,11)]
 # seg10 = [(14,20),(14,11)]
 # seg11 = [(15,20),(15,11)]

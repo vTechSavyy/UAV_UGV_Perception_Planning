@@ -1,5 +1,6 @@
 ### Utility Functions for Planning algorithms:
 import params
+import math
 import numpy as np
 from dHeap import dHeap
 from dHeap import dHeapNode
@@ -398,7 +399,7 @@ def euclidean_heurestic(currIdx, goalIdx):
     
     return  np.sqrt((goalX - currX)**2 + (goalY - currY)**2)
     
-def astar_no_graph(startIdx, goalIdx, numNodes, epsilon):
+def astar_heap(startIdx, goalIdx, numNodes, epsilon):
     
     #global mazeSegments
     
@@ -414,7 +415,8 @@ def astar_no_graph(startIdx, goalIdx, numNodes, epsilon):
     closed = []
     
     # 0.5: Initialize a boolean array to indicate which nodes have been visited: 
-    visited = []    
+    visited = []   
+    
     for i in range(numNodes):         
         visited.append(False)
     
@@ -437,8 +439,160 @@ def astar_no_graph(startIdx, goalIdx, numNodes, epsilon):
         # Update the iteration counter:
         iterCount +=1
         
+#         if iterCount % 50 == 0: 
+            
+#             print (" Length of Priority Queue is: " , PQ.get_length() )
+           
+        
         # Now pop of the next minimum node in the PQ: 
         popped = PQ.extract_min()
+        
+        # Add the popped node to the closed list: 
+        closed.append(popped)
+        
+        # Mark the node as visited: 
+        visited[popped.vertex] = True
+        
+        # Extract and Iterate through the neighbors of the popped vertex:        
+        pNeighbors , dNeighbors = get_neighbor_indices(popped.vertex)
+        
+        # 1. Perpendicular Neighbors:
+        for p in pNeighbors:
+            
+            # Only 
+            # 1. if the neighbor has not been visited previously: 
+            # 2. The neighbor is visitable and 
+            # 3. An edge between neighbor and popped node is possible:
+            if not visited[p] and is_node_visitable(p, params.mazeSegments) and check_edge(popped.vertex,p,params.mazeSegments):
+            
+                # Get the key (distance from start) of the neighbor node and update the best neighbor in the closed list:
+                if epsilon > 0: 
+                    newKey = popped.key + pCost + epsilon*euclidean_heurestic(p,goalIdx)
+                    
+                else: 
+                    newKey = popped.key + pCost
+                    
+                newNode = dHeapNode(p , newKey, iterCount - 1)
+
+                # Insert/update the new node in the Priority Queue:
+                PQ.insert(newNode)
+        
+        # 2. Diagonal Neighbors: 
+        for d in dNeighbors: 
+            
+            # Only 
+            # 1. if the neighbor has not been visited previously: 
+            # 2. The neighbor is visitable and 
+            # 3. An edge between neighbor and popped node is possible:
+            if not visited[d] and is_node_visitable(d,params.mazeSegments) and check_edge(popped.vertex,d,params.mazeSegments):
+            
+                # Get the key (distance from start) of the neighbor node and update the best neighbor in the closed list:
+                if epsilon > 0:
+                    newKey = popped.key + dCost + epsilon*euclidean_heurestic(p,goalIdx)
+                
+                else: 
+                    newKey = popped.key + dCost
+                    
+                newNode = dHeapNode(d , newKey, iterCount - 1)
+
+                # Insert/update the new node in the Priority Queue:
+                PQ.insert(newNode)     
+
+    
+    
+    # If the PQ is empty then a Path is not feasible: 
+    if not PQ.heapList and popped.vertex != goalIdx: 
+        
+        print (" Path not Possible!!! Sorry!!!")
+        return [] , 0.0
+        
+    # Extract the shortest path by Back tracking:
+    pathIndices = []    
+    pathLength = 0.0
+    currNode = popped
+    
+    # Back tracking: 
+    while currNode.vertex != startIdx: 
+        
+        segStartIdx = currNode.vertex
+        
+        pathIndices.append(currNode.vertex)
+        
+        currNode = closed[currNode.bestNeighbor]
+        
+        segEndIdx = currNode.vertex
+        
+        pathLength += euclidean_heurestic(segStartIdx, segEndIdx)
+     
+    # Reverse the path: 
+    aStarPathIndices = pathIndices[::-1]
+    
+
+        
+    # Return the shortest path and its length:
+    return aStarPathIndices ,pathLength
+
+
+
+## Description: Baseline implementation of A* algorithm without using a Heap for the Priority Queue. This is in order to make a comparison for the speed up by using the Heap : 
+
+    
+def astar_dict(startIdx, goalIdx, numNodes, epsilon):
+    
+    #global mazeSegments
+    
+    # Parameters: 
+    # 1. Edge cost for perpendicular neighbors: 
+    pCost = 1
+    
+    # 2. Edge cost for diagonal neighbors: 
+    dCost = 1.414
+    
+    ## Steps: 
+    # 0. Initialize a list for the closed List:
+    closed = []
+    
+    # 0.5: Initialize a boolean array to indicate which nodes have been visited: 
+    visited = []    
+    for i in range(numNodes):         
+        visited.append(False)
+        
+    
+    
+    # 1. Initialize the Priority Queue as a regular Python dictionary: 
+    PQ = {}
+    
+    # 2. Add the start node to the PQ:
+    startNode = dHeapNode(startIdx,0,0) 
+    
+    PQ[startIdx] = startNode
+    
+    # Pop off:
+    iterCount = 0
+    popped = startNode
+    
+    # 3. As long as goalIdx is not popped from the PQ and if the PQ is not empty:
+    while popped.vertex != goalIdx and (PQ or iterCount < 1):
+        
+        # Update the iteration counter:
+        iterCount +=1
+        
+#         if iterCount % 50 == 0: 
+            
+#             print (" Length of Priority Queue is: " , len(PQ) )
+        
+        # Now pop of the next minimum node in the PQ: 
+        temp = dHeapNode(-1, np.Inf, -1)
+        
+        # For loop to traverse the Priority Queue:
+        for k, Node in PQ.items(): 
+            
+            if Node.key < temp.key:
+                temp = Node
+                minNodeDictKey = k
+        
+        # Remove the node with the smallest key from the Dictionary: 
+        popped = PQ.pop(minNodeDictKey)
         
         # Add the popped node to the closed list: 
         closed.append(popped)
@@ -463,7 +617,21 @@ def astar_no_graph(startIdx, goalIdx, numNodes, epsilon):
                 newNode = dHeapNode(p , newKey, iterCount - 1)
 
                 # Insert/update the new node in the Priority Queue:
-                PQ.insert(newNode)
+                # Check if the node already exists in the PQ:
+                if p in PQ:   
+                    
+                    # Check to see if the new key is less: 
+                    if newKey < PQ[p].key:
+                        
+                        PQ[p]= newNode
+                        
+                # If not already in the PQ then add the new node:    
+                else: 
+                    
+                    PQ[p]= newNode
+                    
+                    
+                    
         
         # 2. Diagonal Neighbors: 
         for d in dNeighbors: 
@@ -472,6 +640,8 @@ def astar_no_graph(startIdx, goalIdx, numNodes, epsilon):
             # 1. if the neighbor has not been visited previously: 
             # 2. The neighbor is visitable and 
             # 3. An edge between neighbor and popped node is possible:
+            
+            #print (d)
             if not visited[d] and is_node_visitable(d,params.mazeSegments) and check_edge(popped.vertex,d,params.mazeSegments):
             
                 # Get the key (distance from start) of the neighbor node and update the best neighbor in the closed list:
@@ -479,35 +649,47 @@ def astar_no_graph(startIdx, goalIdx, numNodes, epsilon):
                 newNode = dHeapNode(d , newKey, iterCount - 1)
 
                 # Insert/update the new node in the Priority Queue:
-                PQ.insert(newNode)     
+                # Check if the node already exists in the PQ:
+                if d in PQ:                     
+                    # Check to see if the new key is less: 
+                    if newKey < PQ[d].key:
+                        
+                        PQ[d]= newNode
+                        
+                # If not already in the PQ then add the new node:    
+                else: 
+                    
+                    PQ[d]= newNode     
 
     
     
     # If the PQ is empty then a Path is not feasible: 
-    if not PQ.heapList and popped.vertex != goalIdx: 
+    if not PQ and popped.vertex != goalIdx: 
         
         print (" Path not Possible!!! Sorry!!!")
-        return []
+        return [] , 0.0
         
     # Extract the shortest path by Back tracking:
     pathIndices = []    
+    pathLength = 0.0
     currNode = popped
     
     # Back tracking: 
     while currNode.vertex != startIdx: 
         
+        segStartIdx = currNode.vertex
+        
         pathIndices.append(currNode.vertex)
         
         currNode = closed[currNode.bestNeighbor]
+        
+        segEndIdx = currNode.vertex
+        
+        pathLength += euclidean_heurestic(segStartIdx, segEndIdx)
      
     # Reverse the path: 
     aStarPathIndices = pathIndices[::-1]
     
-    # Print the path co-ordinates:
-#     for idx in truePathIndices: 
         
-#         print( X[idx], ",", Y[idx])
-        
-    # Return the shortest path: 
-    return aStarPathIndices
-
+    # Return the shortest path and its length:
+    return aStarPathIndices , pathLength
